@@ -465,6 +465,146 @@ class Unlock {
 	}
 
 	/**
+	 * Look for a `no-session-content`/`no-membership-content` slot block
+	 * (see class-no-session-content-block.php) inside already-rendered block
+	 * content, identified by its `data-unlock-slot` wrapper, and return only
+	 * that slot's inner markup.
+	 *
+	 * Requires the DOM extension; on hosts without it this quietly returns
+	 * null so callers fall back to the built-in button instead of fataling.
+	 *
+	 * @param string $html Rendered content of the parent unlock-box block.
+	 * @param string $slot Slot identifier: 'no-session' or 'no-membership'.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @return string|null Inner HTML of the slot, or null if not present.
+	 */
+	private static function extract_slot_content( $html, $slot ) {
+		if ( ! class_exists( '\DOMDocument' ) || false === strpos( $html, 'data-unlock-slot' ) ) {
+			return null;
+		}
+
+		$node = self::find_slot_node( $html, $slot );
+
+		if ( ! $node ) {
+			return null;
+		}
+
+		$inner_html = '';
+		foreach ( $node->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName
+			$inner_html .= $node->ownerDocument->saveHTML( $child );
+		}
+
+		return $inner_html;
+	}
+
+	/**
+	 * Remove any `data-unlock-slot` wrapper (and its content) from already
+	 * rendered block content. Used when the visitor already has access, or
+	 * is the post author/an admin, so the slot content authored for other
+	 * visitor states never leaks into the real protected content.
+	 *
+	 * @param string $html Rendered content of the parent unlock-box block.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @return string
+	 */
+	private static function strip_slots( $html ) {
+		if ( ! class_exists( '\DOMDocument' ) || false === strpos( $html, 'data-unlock-slot' ) ) {
+			return $html;
+		}
+
+		$dom = self::parse_html_fragment( $html );
+
+		if ( ! $dom ) {
+			return $html;
+		}
+
+		$xpath = new \DOMXPath( $dom );
+		foreach ( $xpath->query( '//*[@data-unlock-slot]' ) as $node ) {
+			$node->parentNode->removeChild( $node ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName
+		}
+
+		return self::fragment_inner_html( $dom );
+	}
+
+	/**
+	 * Parses an HTML fragment into a DOMDocument wrapped in a throwaway root
+	 * element, so partial/unclosed markup from block content doesn't trip up
+	 * DOMDocument (which otherwise expects a full document).
+	 *
+	 * @param string $html Fragment to parse.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @return \DOMDocument|null
+	 */
+	private static function parse_html_fragment( $html ) {
+		$dom = new \DOMDocument();
+
+		$previous_setting = libxml_use_internal_errors( true );
+		$loaded            = $dom->loadHTML(
+			'<?xml encoding="utf-8" ?><div id="unlock-fragment-root">' . $html . '</div>',
+			LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+		);
+		libxml_clear_errors();
+		libxml_use_internal_errors( $previous_setting );
+
+		return $loaded ? $dom : null;
+	}
+
+	/**
+	 * Finds the element carrying `data-unlock-slot="$slot"` inside rendered
+	 * block content.
+	 *
+	 * @param string $html Rendered content of the parent unlock-box block.
+	 * @param string $slot Slot identifier: 'no-session' or 'no-membership'.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @return \DOMNode|null
+	 */
+	private static function find_slot_node( $html, $slot ) {
+		$dom = self::parse_html_fragment( $html );
+
+		if ( ! $dom ) {
+			return null;
+		}
+
+		$xpath = new \DOMXPath( $dom );
+		$nodes = $xpath->query( sprintf( '//*[@data-unlock-slot="%s"]', $slot ) );
+
+		return $nodes->length ? $nodes->item( 0 ) : null;
+	}
+
+	/**
+	 * Serializes the children of the throwaway root created by
+	 * parse_html_fragment() back into an HTML string.
+	 *
+	 * @param \DOMDocument $dom Document produced by parse_html_fragment().
+	 *
+	 * @since 4.2.0
+	 *
+	 * @return string
+	 */
+	private static function fragment_inner_html( $dom ) {
+		$root = $dom->getElementById( 'unlock-fragment-root' );
+
+		if ( ! $root ) {
+			return '';
+		}
+
+		$html = '';
+		foreach ( $root->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName
+			$html .= $dom->saveHTML( $child );
+		}
+
+		return $html;
+	}
+
+	/**
 	 * Render block.
 	 *
 	 * @param array  $locks      List of attributes passed in block.
@@ -482,13 +622,19 @@ class Unlock {
 	public static function render_content( $locks, $content, $appearance = array() ) {
 		// Bail out if current user is admin or the author.
 		if ( current_user_can( 'manage_options' ) || ( get_the_author_meta( 'ID' ) === get_current_user_id() ) ) {
-			return $content;
+			return self::strip_slots( $content );
 		}
 
 		if (
 			! is_user_logged_in() ||
 			( is_user_logged_in() && ! up_get_user_ethereum_address() )
 		) {
+			$slot_content = self::extract_slot_content( $content, 'no-session' );
+
+			if ( null !== $slot_content ) {
+				return $slot_content;
+			}
+
 			return Unlock::render_login_button( isset( $appearance['login'] ) ? $appearance['login'] : array() );
 		}
 
@@ -496,9 +642,15 @@ class Unlock {
 		$networks = isset( $settings['networks'] ) ? $settings['networks'] : array();
 
 		if ( !Unlock::has_access( $networks, $locks ) ) {
+			$slot_content = self::extract_slot_content( $content, 'no-membership' );
+
+			if ( null !== $slot_content ) {
+				return $slot_content;
+			}
+
 			return Unlock::render_checkout_button( $locks, isset( $appearance['noMembership'] ) ? $appearance['noMembership'] : array() );
 		}
-		return $content;
+		return self::strip_slots( $content );
 	}
 
 
