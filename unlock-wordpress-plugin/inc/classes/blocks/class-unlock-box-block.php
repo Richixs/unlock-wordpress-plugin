@@ -46,6 +46,32 @@ class Unlock_Box_Block {
 	}
 
 	/**
+	 * Default shape for a per-block appearance override. Every field mirrors
+	 * one of the general settings consumed by Unlock::get_appearance_setting();
+	 * `useGlobal` stays true until an admin explicitly opts into a per-block
+	 * look from the editor, so existing content keeps rendering the site-wide
+	 * appearance unchanged.
+	 *
+	 * @since 4.1.0
+	 *
+	 * @return array
+	 */
+	private function default_appearance_attribute() {
+		return array(
+			'type'    => 'object',
+			'default' => array(
+				'useGlobal'   => true,
+				'text'        => '',
+				'description' => '',
+				'bgColor'     => '',
+				'textColor'   => '',
+				'bgImage'     => '',
+				'blurred'     => false,
+			),
+		);
+	}
+
+	/**
 	 * Register block type.
 	 *
 	 * @since 3.0.0
@@ -64,6 +90,10 @@ class Unlock_Box_Block {
 						'type'    => 'array',
 						'default' => array(),
 					),
+					// Per-block appearance override for the "no session" state (see templates/login/button.php).
+					'loginAppearance'         => $this->default_appearance_attribute(),
+					// Per-block appearance override for the "no membership" state (see templates/login/checkout-button.php).
+					'noMembershipAppearance'  => $this->default_appearance_attribute(),
 				),
 				'supports'        => array(
 					'align' => true,
@@ -83,7 +113,12 @@ class Unlock_Box_Block {
 	 * @return string HTML elements.
 	 */
 	public function render_block( $attributes, $content ) {
-		$locks = $attributes['locks'];
-		return Unlock::render_content( $locks, $content );
+		$locks      = $attributes['locks'];
+		$appearance = array(
+			'login'        => isset( $attributes['loginAppearance'] ) ? $attributes['loginAppearance'] : array(),
+			'noMembership' => isset( $attributes['noMembershipAppearance'] ) ? $attributes['noMembershipAppearance'] : array(),
+		);
+
+		return Unlock::render_content( $locks, $content, $appearance );
 	}
 }
