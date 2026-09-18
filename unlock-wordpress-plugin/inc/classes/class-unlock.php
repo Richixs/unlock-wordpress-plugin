@@ -21,6 +21,21 @@ class Unlock {
 	use Singleton;
 
 	/**
+	 * How many times render_login_button() has run during this request.
+	 *
+	 * A page can have several locked blocks; if none of them has a session,
+	 * showing the full styled "log in" prompt (description, background
+	 * image, etc.) once per block is repetitive and confusing. Only the
+	 * first occurrence gets the full treatment — see
+	 * render_repeated_login_notice().
+	 *
+	 * @since 4.1.0
+	 *
+	 * @var int
+	 */
+	private static $login_button_render_count = 0;
+
+	/**
 	 * Returns the locksmith base URL used to validate the auth tokens.
 	 */
 	public static function get_locksmith_validate_url_base() {
@@ -390,6 +405,12 @@ class Unlock {
 	 * @return mixed|void
 	 */
 	public static function render_login_button( $override = array() ) {
+		self::$login_button_render_count++;
+
+		if ( self::$login_button_render_count > 1 ) {
+			return self::render_repeated_login_notice( $override );
+		}
+
 		$login_button_text       = self::get_appearance_setting( $override, 'text', 'login_button_text', __( 'Login with Unlock', 'unlock-protocol' ) );
 		$login_button_bg_color   = self::get_appearance_setting( $override, 'bgColor', 'login_button_bg_color', '#000' );
 		$login_button_text_color = self::get_appearance_setting( $override, 'textColor', 'login_button_text_color', '#fff' );
@@ -415,6 +436,32 @@ class Unlock {
 		$html_template = unlock_protocol_get_template( 'login/button', $template_data );
 
 		return apply_filters( 'unlock_protocol_login_content', $html_template, $template_data );
+	}
+
+	/**
+	 * Compact markup used from the second locked block onward, on a page
+	 * where the visitor has no wallet session. Keeps a working login link
+	 * without repeating the full styled prompt (description, background
+	 * image) for every locked section.
+	 *
+	 * @param array $override Optional per-block appearance override; only
+	 *                        its 'text' is used here, everything else
+	 *                        belongs to the full prompt.
+	 *
+	 * @since 4.1.0
+	 *
+	 * @return mixed|void
+	 */
+	private static function render_repeated_login_notice( $override ) {
+		$login_button_text = self::get_appearance_setting( $override, 'text', 'login_button_text', __( 'Login with Unlock', 'unlock-protocol' ) );
+
+		$html_template = sprintf(
+			'<p class="unlock-login-repeated-notice"><a href="%1$s">%2$s</a></p>',
+			esc_url( Unlock::get_login_url( get_permalink() ) ),
+			esc_html( $login_button_text )
+		);
+
+		return apply_filters( 'unlock_protocol_login_content_repeated', $html_template, $override );
 	}
 
 	/**
