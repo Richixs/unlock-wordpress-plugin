@@ -16,6 +16,7 @@ import { getBlockTypes } from "@wordpress/blocks";
 import "../../../scss/admin/editor.scss";
 import { getEthereumNetworksFromSettings } from "../../admin/utils";
 import { AdminLocks } from "../../admin-locks";
+import { AppearanceOverridePanel } from "./appearance-panel";
 
 /**
  * Helper function to check if locks are all set and valid
@@ -56,7 +57,7 @@ const lockValid = (lock) => {
 };
 
 export default function Edit({ attributes, setAttributes }) {
-  const { locks } = attributes;
+  const { locks, loginAppearance, noMembershipAppearance } = attributes;
   // Preventing the own block.
   const ALLOWED_BLOCKS = getBlockTypes()
     .map((block) => block.name)
@@ -101,6 +102,18 @@ export default function Edit({ attributes, setAttributes }) {
         <PanelBody title={__("Locks", "unlock-protocol")}>
           <AdminLocks onSaveNewLock={addLock} removeLock={removeLock} locks={locks} />
         </PanelBody>
+
+        <AppearanceOverridePanel
+          title={__("Appearance — no wallet session", "unlock-protocol")}
+          value={loginAppearance}
+          onChange={(loginAppearance) => setAttributes({ loginAppearance })}
+        />
+
+        <AppearanceOverridePanel
+          title={__("Appearance — no membership", "unlock-protocol")}
+          value={noMembershipAppearance}
+          onChange={(noMembershipAppearance) => setAttributes({ noMembershipAppearance })}
+        />
       </InspectorControls>
 
       <div className="unlock-header-icon"></div>

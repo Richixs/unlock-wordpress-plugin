@@ -2,6 +2,7 @@ import { __ } from "@wordpress/i18n";
 import { registerBlockType } from "@wordpress/blocks";
 import { InnerBlocks } from "@wordpress/block-editor";
 import Edit from "./edit";
+import { DEFAULT_APPEARANCE } from "./appearance-panel";
 
 /**
  * Register the block.
@@ -26,6 +27,16 @@ registerBlockType("unlock-protocol/unlock-box", {
     ethereumNetworks: {
       type: "array",
       default: [],
+    },
+    // Per-block appearance override for the "no session" state.
+    loginAppearance: {
+      type: "object",
+      default: DEFAULT_APPEARANCE,
+    },
+    // Per-block appearance override for the "no membership" state.
+    noMembershipAppearance: {
+      type: "object",
+      default: DEFAULT_APPEARANCE,
     },
   },
 
