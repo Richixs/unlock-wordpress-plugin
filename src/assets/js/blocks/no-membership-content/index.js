@@ -9,5 +9,11 @@ registerSlotBlock({
     "unlock-protocol"
   ),
   slot: "no-membership",
-  editorLabel: __("Shown when the visitor has no valid membership:", "unlock-protocol"),
+  modifierClass: "unlock-slot-editor--no-membership",
+  dashicon: "cart",
+  editorLabel: __("No valid membership", "unlock-protocol"),
+  editorHint: __(
+    "Only visitors with a session but no valid membership see this. Add blocks below — they replace the default purchase button entirely.",
+    "unlock-protocol"
+  ),
 });

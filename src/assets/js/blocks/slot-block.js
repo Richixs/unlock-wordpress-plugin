@@ -13,7 +13,16 @@ import { InnerBlocks, useBlockProps } from "@wordpress/block-editor";
  * inside the parent block's rendered content to decide what to show, and
  * falls back to the built-in button when the slot isn't present.
  */
-export const registerSlotBlock = ({ name, title, description, slot, editorLabel }) => {
+export const registerSlotBlock = ({
+  name,
+  title,
+  description,
+  slot,
+  modifierClass,
+  editorLabel,
+  editorHint,
+  dashicon = "visibility",
+}) => {
   registerBlockType(name, {
     title,
     category: "common",
@@ -24,11 +33,17 @@ export const registerSlotBlock = ({ name, title, description, slot, editorLabel 
       align: false,
     },
     edit: () => {
-      const blockProps = useBlockProps({ className: "unlock-slot-editor" });
+      const blockProps = useBlockProps({
+        className: `unlock-slot-editor ${modifierClass}`,
+      });
       return (
         <div {...blockProps}>
-          <p className="unlock-slot-editor__label">{editorLabel}</p>
-          <InnerBlocks />
+          <p className="unlock-slot-editor__label">
+            <span className={`dashicons dashicons-${dashicon}`} aria-hidden="true"></span>
+            {editorLabel}
+          </p>
+          {editorHint && <p className="unlock-slot-editor__hint">{editorHint}</p>}
+          <InnerBlocks renderAppender={InnerBlocks.ButtonBlockAppender} />
         </div>
       );
     },

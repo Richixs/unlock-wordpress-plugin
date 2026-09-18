@@ -9,5 +9,11 @@ registerSlotBlock({
     "unlock-protocol"
   ),
   slot: "no-session",
-  editorLabel: __("Shown when the visitor has no wallet session:", "unlock-protocol"),
+  modifierClass: "unlock-slot-editor--no-session",
+  dashicon: "unlock",
+  editorLabel: __("No wallet session", "unlock-protocol"),
+  editorHint: __(
+    "Only visitors without a wallet session see this. Add blocks below — they replace the default login button entirely.",
+    "unlock-protocol"
+  ),
 });

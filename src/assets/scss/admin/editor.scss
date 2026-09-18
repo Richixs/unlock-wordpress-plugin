@@ -62,3 +62,69 @@
     margin-top: 0px !important;
   }
 }
+
+// Editor-only appearance for the no-session-content / no-membership-content
+// slot blocks (see slot-block.js). A clearly bordered, labelled zone so it's
+// obvious which content only shows in that specific state, and where to drop
+// new blocks — without this, the slot looked identical to the surrounding
+// protected content and admins could accidentally place blocks as siblings
+// instead of children.
+.unlock-slot-editor {
+  --unlock-slot-accent: var(--wp-admin-theme-color);
+
+  margin: 16px 0;
+  padding: 14px 16px 16px;
+  border: 1px dashed var(--unlock-slot-accent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--unlock-slot-accent) 4%, transparent);
+
+  &--no-session {
+    --unlock-slot-accent: #3858e9;
+  }
+
+  &--no-membership {
+    --unlock-slot-accent: #b26200;
+  }
+
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 4px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--unlock-slot-accent);
+
+    .dashicons {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+    }
+  }
+
+  &__hint {
+    margin: 0 0 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #757575;
+  }
+}
+
+// Label above the default InnerBlocks area of the unlock-box block itself
+// (the "protected" zone), so it reads as one of three clearly labelled
+// states alongside the two .unlock-slot-editor zones below it.
+.unlock-protected-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #2a8c4a;
+
+  .dashicons {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}

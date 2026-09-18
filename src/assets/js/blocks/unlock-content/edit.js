@@ -67,7 +67,15 @@ export default function Edit({ attributes, setAttributes }) {
   const showInnerBlock = () => {
     wp.data.dispatch("core/editor").unlockPostSaving("my-lock");
 
-    return <InnerBlocks allowedBlocks={ALLOWED_BLOCKS} />;
+    return (
+      <>
+        <p className="unlock-protected-label">
+          <span className="dashicons dashicons-lock" aria-hidden="true"></span>
+          {__("Protected content — shown to visitors with a valid membership", "unlock-protocol")}
+        </p>
+        <InnerBlocks allowedBlocks={ALLOWED_BLOCKS} />
+      </>
+    );
   };
 
   const lockWarning = () => {
