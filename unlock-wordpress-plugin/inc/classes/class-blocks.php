@@ -8,6 +8,8 @@
 namespace Unlock_Protocol\Inc;
 
 use Unlock_Protocol\Inc\Blocks\Unlock_Box_Block;
+use Unlock_Protocol\Inc\Blocks\No_Session_Content_Block;
+use Unlock_Protocol\Inc\Blocks\No_Membership_Content_Block;
 use Unlock_Protocol\Inc\Traits\Singleton;
 
 /**
@@ -28,6 +30,8 @@ class Blocks {
 
 		$this->setup_hooks();
 		Unlock_Box_Block::get_instance();
+		No_Session_Content_Block::get_instance();
+		No_Membership_Content_Block::get_instance();
 
 	}
 
