@@ -315,19 +315,49 @@ class Unlock {
 
 
 	/**
+	 * Resolve a single appearance setting, preferring a per-block override
+	 * over the site-wide general setting.
+	 *
+	 * A block only overrides appearance when its override array explicitly
+	 * sets `useGlobal` to false; otherwise the general setting is used, which
+	 * keeps existing sites (and blocks with no override at all) behaving
+	 * exactly as before this was introduced.
+	 *
+	 * @param array  $override    Per-block appearance override, if any.
+	 * @param string $key         Key inside $override (and inside the general settings' matching shape).
+	 * @param string $general_key Key used to read the site-wide general setting.
+	 * @param mixed  $default     Fallback default when neither is set.
+	 *
+	 * @since 4.1.0
+	 *
+	 * @return mixed
+	 */
+	private static function get_appearance_setting( $override, $key, $general_key, $default = '' ) {
+		$use_override = ! empty( $override ) && empty( $override['useGlobal'] ) && array_key_exists( $key, $override );
+
+		if ( $use_override ) {
+			return $override[ $key ];
+		}
+
+		return up_get_general_settings( $general_key, $default );
+	}
+
+	/**
 	 * Render checkout button.
 	 *
-	 * @param array $locks locks.
+	 * @param array $locks    locks.
+	 * @param array $override Optional per-block appearance override for the
+	 *                        "no membership" state. See get_appearance_setting().
 	 *
 	 * @return mixed|void
 	 */
-	public static function render_checkout_button( $locks ) {
+	public static function render_checkout_button( $locks, $override = array() ) {
 		$checkout_url = Unlock::get_checkout_url( $locks, get_permalink() );
 
-		$checkout_button_text       = up_get_general_settings( 'checkout_button_text', __( 'Purchase this', 'unlock-protocol' ) );
-		$checkout_button_bg_color   = up_get_general_settings( 'checkout_button_bg_color', '#000' );
-		$checkout_button_text_color = up_get_general_settings( 'checkout_button_text_color', '#fff' );
-		$blurred_image_activated    = wp_validate_boolean( up_get_general_settings( 'checkout_blurred_image_button', false ) );
+		$checkout_button_text       = self::get_appearance_setting( $override, 'text', 'checkout_button_text', __( 'Purchase this', 'unlock-protocol' ) );
+		$checkout_button_bg_color   = self::get_appearance_setting( $override, 'bgColor', 'checkout_button_bg_color', '#000' );
+		$checkout_button_text_color = self::get_appearance_setting( $override, 'textColor', 'checkout_button_text_color', '#fff' );
+		$blurred_image_activated    = wp_validate_boolean( self::get_appearance_setting( $override, 'blurred', 'checkout_blurred_image_button', false ) );
 
 		$template_data = array(
 			'checkout_url'               => $checkout_url,
@@ -339,8 +369,8 @@ class Unlock {
 
 		// Fetching some more data if blurred image button type is activated.
 		if ( $blurred_image_activated ) {
-			$checkout_button_description = up_get_general_settings( 'checkout_button_description', __( 'To view this content please', 'unlock-protocol' ) );
-			$checkout_bg_image           = up_get_general_settings( 'checkout_bg_image' );
+			$checkout_button_description = self::get_appearance_setting( $override, 'description', 'checkout_button_description', __( 'To view this content please', 'unlock-protocol' ) );
+			$checkout_bg_image           = self::get_appearance_setting( $override, 'bgImage', 'checkout_bg_image', '' );
 
 			$template_data['checkout_button_description'] = $checkout_button_description;
 			$template_data['checkout_bg_image']           = $checkout_bg_image;
@@ -354,13 +384,16 @@ class Unlock {
 	/**
 	 * Render login button.
 	 *
+	 * @param array $override Optional per-block appearance override for the
+	 *                        "no session" state. See get_appearance_setting().
+	 *
 	 * @return mixed|void
 	 */
-	public static function render_login_button() {
-		$login_button_text       = up_get_general_settings( 'login_button_text', __( 'Login with Unlock', 'unlock-protocol' ) );
-		$login_button_bg_color   = up_get_general_settings( 'login_button_bg_color', '#000' );
-		$login_button_text_color = up_get_general_settings( 'login_button_text_color', '#fff' );
-		$blurred_image_activated = wp_validate_boolean( up_get_general_settings( 'login_blurred_image_button', false ) );
+	public static function render_login_button( $override = array() ) {
+		$login_button_text       = self::get_appearance_setting( $override, 'text', 'login_button_text', __( 'Login with Unlock', 'unlock-protocol' ) );
+		$login_button_bg_color   = self::get_appearance_setting( $override, 'bgColor', 'login_button_bg_color', '#000' );
+		$login_button_text_color = self::get_appearance_setting( $override, 'textColor', 'login_button_text_color', '#fff' );
+		$blurred_image_activated = wp_validate_boolean( self::get_appearance_setting( $override, 'blurred', 'login_blurred_image_button', false ) );
 
 		$template_data = array(
 			'login_url'               => Unlock::get_login_url( get_permalink() ),
@@ -372,8 +405,8 @@ class Unlock {
 
 		// Fetching some more data if blurred image button type is activated.
 		if ( $blurred_image_activated ) {
-			$login_button_description = up_get_general_settings( 'login_button_description', __( 'To view this content please', 'unlock-protocol' ) );
-			$login_bg_image           = up_get_general_settings( 'login_bg_image' );
+			$login_button_description = self::get_appearance_setting( $override, 'description', 'login_button_description', __( 'To view this content please', 'unlock-protocol' ) );
+			$login_bg_image           = self::get_appearance_setting( $override, 'bgImage', 'login_bg_image', '' );
 
 			$template_data['login_button_description'] = $login_button_description;
 			$template_data['login_bg_image']           = $login_bg_image;
@@ -387,14 +420,19 @@ class Unlock {
 	/**
 	 * Render block.
 	 *
-	 * @param array  $locks List of attributes passed in block.
-	 * @param string $content post content.
+	 * @param array  $locks      List of attributes passed in block.
+	 * @param string $content    post content.
+	 * @param array  $appearance Optional per-block appearance overrides, keyed
+	 *                           'login' and 'noMembership'. Callers that don't
+	 *                           pass this (e.g. the full-post lock flow) keep
+	 *                           using the site-wide general settings exactly
+	 *                           as before.
 	 *
 	 * @since 4.0.0
 	 *
 	 * @return string HTML elements.
 	 */
-	public static function render_content( $locks, $content ) {
+	public static function render_content( $locks, $content, $appearance = array() ) {
 		// Bail out if current user is admin or the author.
 		if ( current_user_can( 'manage_options' ) || ( get_the_author_meta( 'ID' ) === get_current_user_id() ) ) {
 			return $content;
@@ -404,14 +442,14 @@ class Unlock {
 			! is_user_logged_in() ||
 			( is_user_logged_in() && ! up_get_user_ethereum_address() )
 		) {
-			return Unlock::render_login_button();
+			return Unlock::render_login_button( isset( $appearance['login'] ) ? $appearance['login'] : array() );
 		}
 
 		$settings = get_option( 'unlock_protocol_settings', array() );
 		$networks = isset( $settings['networks'] ) ? $settings['networks'] : array();
 
 		if ( !Unlock::has_access( $networks, $locks ) ) {
-			return Unlock::render_checkout_button( $locks );
+			return Unlock::render_checkout_button( $locks, isset( $appearance['noMembership'] ) ? $appearance['noMembership'] : array() );
 		}
 		return $content;
 	}
