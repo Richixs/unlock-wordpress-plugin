@@ -334,9 +334,12 @@ class Unlock {
 	 * over the site-wide general setting.
 	 *
 	 * A block only overrides appearance when its override array explicitly
-	 * sets `useGlobal` to false; otherwise the general setting is used, which
-	 * keeps existing sites (and blocks with no override at all) behaving
-	 * exactly as before this was introduced.
+	 * sets `useGlobal` to false. Even then, an individual field left blank by
+	 * the admin (e.g. the button text field, untouched) falls back to the
+	 * plugin's own built-in $default instead of rendering empty — the editor
+	 * always sends every field once useGlobal is off (see appearance-panel.js
+	 * spreading DEFAULT_APPEARANCE), so "field present but empty" can't be
+	 * used to mean "not customized, use the global setting".
 	 *
 	 * @param array  $override    Per-block appearance override, if any.
 	 * @param string $key         Key inside $override (and inside the general settings' matching shape).
@@ -348,10 +351,14 @@ class Unlock {
 	 * @return mixed
 	 */
 	private static function get_appearance_setting( $override, $key, $general_key, $default = '' ) {
-		$use_override = ! empty( $override ) && empty( $override['useGlobal'] ) && array_key_exists( $key, $override );
+		$overriding = ! empty( $override ) && empty( $override['useGlobal'] );
 
-		if ( $use_override ) {
-			return $override[ $key ];
+		if ( $overriding ) {
+			$value = isset( $override[ $key ] ) ? $override[ $key ] : '';
+
+			// Booleans (e.g. 'blurred') are always meaningful; only treat an
+			// empty *string* as "left blank" and fall back to $default.
+			return ( '' === $value ) ? $default : $value;
 		}
 
 		return up_get_general_settings( $general_key, $default );

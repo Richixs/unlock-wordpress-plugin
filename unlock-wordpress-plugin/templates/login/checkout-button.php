@@ -9,20 +9,21 @@
 
 ?>
 
-<?php if ( $checkout_button_bg_color && $checkout_button_text_color ) : ?>
 <style>
-	<?php if ( $checkout_bg_image ) : ?>
-	.checkout-button-container.blurred,
-	.checkout-button-container.blurred {
-		background: url('<?php echo esc_url( $checkout_bg_image ); ?>') no-repeat center center;
-		background-size: cover;
+	.checkout-button-container {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
 	}
 
-	.checkout-button-container.blurred p {
-		color: <?php echo sanitize_hex_color( $checkout_button_text_color ); ?>;
+	.checkout-button-container .checkout-button-image {
+		max-width: 100%;
+		height: auto;
+		border-radius: 4px;
 	}
-	<?php endif; ?>
 
+	<?php if ( $checkout_button_bg_color && $checkout_button_text_color ) : ?>
 	.checkout-button-container .checkout-button {
 		background-color: <?php echo sanitize_hex_color( $checkout_button_bg_color ); ?>;
 		color: <?php echo sanitize_hex_color( $checkout_button_text_color ); ?>;
@@ -32,17 +33,21 @@
 		background-color: <?php echo sanitize_hex_color( $checkout_button_text_color ); ?>;
 		color: <?php echo sanitize_hex_color( $checkout_button_bg_color ); ?>;
 	}
+	<?php endif; ?>
 </style>
-<?php endif; ?>
 
 <?php do_action( 'unlock_before_checkout_button' ); ?>
 
-<div class="checkout-button-container <?php echo $blurred_image_activated ? esc_attr( 'blurred' ) : ''; ?>">
-	<?php
-	if ( $blurred_image_activated ) {
-		printf( '<p>%s</p>', esc_html( $checkout_button_description ) );
-	}
+<div class="checkout-button-container <?php echo $blurred_image_activated ? esc_attr( 'has-description' ) : ''; ?>">
+	<?php if ( $blurred_image_activated && ! empty( $checkout_bg_image ) ) : ?>
+		<img class="checkout-button-image" src="<?php echo esc_url( $checkout_bg_image ); ?>" alt="" />
+	<?php endif; ?>
 
+	<?php if ( $blurred_image_activated && ! empty( $checkout_button_description ) ) : ?>
+		<p class="checkout-button-description"><?php echo esc_html( $checkout_button_description ); ?></p>
+	<?php endif; ?>
+
+	<?php
 	/**
 	 * Not using esc_url() intentionally. esc_url removes the `{}`
 	 * Which is mandatory for unlock protocol checkout.
