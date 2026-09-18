@@ -17,6 +17,16 @@
 		gap: 12px;
 	}
 
+	.login-button-container.align-center {
+		align-items: center;
+		text-align: center;
+	}
+
+	.login-button-container.align-right {
+		align-items: flex-end;
+		text-align: right;
+	}
+
 	.login-button-container .login-button-image {
 		max-width: 100%;
 		height: auto;
@@ -42,7 +52,7 @@
 
 <?php do_action( 'unlock_before_login_button' ); ?>
 
-<div class="login-button-container <?php echo $blurred_image_activated ? esc_attr( 'has-description' ) : ''; ?>">
+<div class="login-button-container align-<?php echo esc_attr( $login_button_alignment ); ?> <?php echo $blurred_image_activated ? esc_attr( 'has-description' ) : ''; ?>">
 	<?php if ( $blurred_image_activated && ! empty( $login_bg_image ) ) : ?>
 		<img class="login-button-image" src="<?php echo esc_url( $login_bg_image ); ?>" alt="" />
 	<?php endif; ?>

@@ -365,6 +365,19 @@ class Unlock {
 	}
 
 	/**
+	 * Whitelists an alignment value to 'left', 'center' or 'right'.
+	 *
+	 * @param string $alignment Raw alignment value.
+	 *
+	 * @since 4.3.0
+	 *
+	 * @return string
+	 */
+	private static function sanitize_alignment( $alignment ) {
+		return in_array( $alignment, array( 'left', 'center', 'right' ), true ) ? $alignment : 'left';
+	}
+
+	/**
 	 * Render checkout button.
 	 *
 	 * @param array $locks    locks.
@@ -380,6 +393,7 @@ class Unlock {
 		$checkout_button_bg_color   = self::get_appearance_setting( $override, 'bgColor', 'checkout_button_bg_color', '#000' );
 		$checkout_button_text_color = self::get_appearance_setting( $override, 'textColor', 'checkout_button_text_color', '#fff' );
 		$blurred_image_activated    = wp_validate_boolean( self::get_appearance_setting( $override, 'blurred', 'checkout_blurred_image_button', false ) );
+		$checkout_button_alignment  = self::sanitize_alignment( self::get_appearance_setting( $override, 'alignment', 'checkout_button_alignment', 'left' ) );
 
 		$template_data = array(
 			'checkout_url'               => $checkout_url,
@@ -387,6 +401,7 @@ class Unlock {
 			'checkout_button_bg_color'   => $checkout_button_bg_color,
 			'checkout_button_text_color' => $checkout_button_text_color,
 			'blurred_image_activated'    => $blurred_image_activated,
+			'checkout_button_alignment'  => $checkout_button_alignment,
 		);
 
 		// Fetching some more data if blurred image button type is activated.
@@ -422,6 +437,7 @@ class Unlock {
 		$login_button_bg_color   = self::get_appearance_setting( $override, 'bgColor', 'login_button_bg_color', '#000' );
 		$login_button_text_color = self::get_appearance_setting( $override, 'textColor', 'login_button_text_color', '#fff' );
 		$blurred_image_activated = wp_validate_boolean( self::get_appearance_setting( $override, 'blurred', 'login_blurred_image_button', false ) );
+		$login_button_alignment  = self::sanitize_alignment( self::get_appearance_setting( $override, 'alignment', 'login_button_alignment', 'left' ) );
 
 		$template_data = array(
 			'login_url'               => Unlock::get_login_url( get_permalink() ),
@@ -429,6 +445,7 @@ class Unlock {
 			'login_button_bg_color'   => $login_button_bg_color,
 			'login_button_text_color' => $login_button_text_color,
 			'blurred_image_activated' => $blurred_image_activated,
+			'login_button_alignment'  => $login_button_alignment,
 		);
 
 		// Fetching some more data if blurred image button type is activated.

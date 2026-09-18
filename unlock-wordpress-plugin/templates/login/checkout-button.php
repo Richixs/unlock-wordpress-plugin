@@ -17,6 +17,16 @@
 		gap: 12px;
 	}
 
+	.checkout-button-container.align-center {
+		align-items: center;
+		text-align: center;
+	}
+
+	.checkout-button-container.align-right {
+		align-items: flex-end;
+		text-align: right;
+	}
+
 	.checkout-button-container .checkout-button-image {
 		max-width: 100%;
 		height: auto;
@@ -38,7 +48,7 @@
 
 <?php do_action( 'unlock_before_checkout_button' ); ?>
 
-<div class="checkout-button-container <?php echo $blurred_image_activated ? esc_attr( 'has-description' ) : ''; ?>">
+<div class="checkout-button-container align-<?php echo esc_attr( $checkout_button_alignment ); ?> <?php echo $blurred_image_activated ? esc_attr( 'has-description' ) : ''; ?>">
 	<?php if ( $blurred_image_activated && ! empty( $checkout_bg_image ) ) : ?>
 		<img class="checkout-button-image" src="<?php echo esc_url( $checkout_bg_image ); ?>" alt="" />
 	<?php endif; ?>

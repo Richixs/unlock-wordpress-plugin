@@ -4,6 +4,7 @@ import {
   ToggleControl,
   TextControl,
   TextareaControl,
+  SelectControl,
   Button,
 } from "@wordpress/components";
 import { PanelColorSettings, MediaUpload, MediaUploadCheck } from "@wordpress/block-editor";
@@ -20,7 +21,14 @@ export const DEFAULT_APPEARANCE = {
   textColor: "",
   bgImage: "",
   blurred: false,
+  alignment: "left",
 };
+
+const ALIGNMENT_OPTIONS = [
+  { label: __("Left", "unlock-protocol"), value: "left" },
+  { label: __("Center", "unlock-protocol"), value: "center" },
+  { label: __("Right", "unlock-protocol"), value: "right" },
+];
 
 /**
  * Inspector panel letting an admin override, for this block only, the
@@ -49,6 +57,13 @@ export const AppearanceOverridePanel = ({ title, value, onChange }) => {
             label={__("Button text", "unlock-protocol")}
             value={appearance.text}
             onChange={(text) => update({ text })}
+          />
+
+          <SelectControl
+            label={__("Alignment", "unlock-protocol")}
+            value={appearance.alignment}
+            options={ALIGNMENT_OPTIONS}
+            onChange={(alignment) => update({ alignment })}
           />
 
           <ToggleControl
